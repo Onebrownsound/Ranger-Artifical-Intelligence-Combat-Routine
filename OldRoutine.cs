@@ -1395,7 +1395,7 @@ namespace OldRoutine
 				var cachedMobsNearForAoe = Utility.NumberOfMobsNear(LokiPoe.Me,
 					OldRoutineSettings.Instance.MaxMeleeRange);
 				var cachedMobsNearForCurse = Utility.NumberOfMobsNear(bestTarget, 20);
-				var cachedMobsNearForRangedAoe = Utility.NumberOfMobsNear(bestTarget,30);
+				var cachedMobsNearForRangedAoe = Utility.NumberOfMobsNear(bestTarget,50);
 
 				foreach (var curseSlot in _curseSlots)
 				{
@@ -1567,9 +1567,9 @@ namespace OldRoutine
                     // See if we can use the skill.
                     var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_frenzySlot);
                     if (skill.CanUse())
-                    {
+                    {	//if we are not at max frenzy charges proceed
                         if (FrenzyCharges < (LokiPoe.ObjectManager.Me.GetStat(StatTypeGGG.MaxFrenzyCharges)) )
-                        {
+                        {	//find the best target and scan within 50m of him and count the numbers of mobs
                             if (cachedMobsNearForRangedAoe >= 3)
                             {
                                 
@@ -1870,36 +1870,21 @@ namespace OldRoutine
 					melee = true;
 				}
 
-				if (melee || cachedProxShield)
+				
+				
+				var dist = LokiPoe.Me.Position.Distance(cachedPosition);
+				if (dist > OldRoutineSettings.Instance.MaxRangeRange)
 				{
-					var dist = LokiPoe.Me.Position.Distance(cachedPosition);
-					if (dist > OldRoutineSettings.Instance.MaxMeleeRange)
-					{
-						Log.InfoFormat("[Logic] Now moving towards {0} because [dist ({1}) > MaxMeleeRange ({2})]",
-							cachedPosition, dist, OldRoutineSettings.Instance.MaxMeleeRange);
+					Log.InfoFormat("[Logic] Now moving towards {0} because [dist ({1}) > MaxRangeRange ({2})]",
+						cachedPosition, dist, OldRoutineSettings.Instance.MaxRangeRange);
 
-						if (!PlayerMover.MoveTowards(cachedPosition))
-						{
-							Log.ErrorFormat("[Logic] MoveTowards failed for {0}.", cachedPosition);
-						}
-						return true;
-					}
-				}
-				else
-				{
-					var dist = LokiPoe.Me.Position.Distance(cachedPosition);
-					if (dist > OldRoutineSettings.Instance.MaxRangeRange)
+					if (!PlayerMover.MoveTowards(cachedPosition))
 					{
-						Log.InfoFormat("[Logic] Now moving towards {0} because [dist ({1}) > MaxRangeRange ({2})]",
-							cachedPosition, dist, OldRoutineSettings.Instance.MaxRangeRange);
-
-						if (!PlayerMover.MoveTowards(cachedPosition))
-						{
-							Log.ErrorFormat("[Logic] MoveTowards failed for {0}.", cachedPosition);
-						}
-						return true;
+						Log.ErrorFormat("[Logic] MoveTowards failed for {0}.", cachedPosition);
 					}
+					return true;
 				}
+			
 
 				await DisableAlwaysHiglight();
 

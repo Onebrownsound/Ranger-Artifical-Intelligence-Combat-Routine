@@ -1564,7 +1564,7 @@ namespace OldRoutine
 				}
 
 				// Do we have frenzy and has it been used in the last second?
-                if (_frenzySlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 1000))
+                if (_frenzySlot != -1 && (_frenzyStopwatch.ElapsedMilliseconds > 500))
                 {
                     // See if we can use the skill.
                     var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_frenzySlot);
@@ -1583,6 +1583,7 @@ namespace OldRoutine
 
                                
                                 Log.ErrorFormat("[Logic] Used Frenzy for stacks.");
+                                _frenzyStopwatch.Restart();
                             }
                         }
                     }

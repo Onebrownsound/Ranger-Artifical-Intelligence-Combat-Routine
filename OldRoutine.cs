@@ -1395,6 +1395,7 @@ namespace OldRoutine
 				var cachedMobsNearForAoe = Utility.NumberOfMobsNear(LokiPoe.Me,
 					OldRoutineSettings.Instance.MaxMeleeRange);
 				var cachedMobsNearForCurse = Utility.NumberOfMobsNear(bestTarget, 20);
+				var cachedMobsNearForRangedAoe = Utility.NumberOfMobsNear(bestTarget,OldRoutineSettings.Instance.MaxRangeRange);
 
 				foreach (var curseSlot in _curseSlots)
 				{
@@ -1567,14 +1568,14 @@ namespace OldRoutine
                     var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_frenzySlot);
                     if (skill.CanUse())
                     {
-                        if (FrenzyCharges < (LokiPoe.ObjectManager.Me.GetStat(StatTypeGGG.MaxFrenzyCharges)-2) )
+                        if (FrenzyCharges < (LokiPoe.ObjectManager.Me.GetStat(StatTypeGGG.MaxFrenzyCharges)) )
                         {
-                            if (Utility.NumberOfMobsNear(LokiPoe.Me, 60) > 0)
+                            if (cachedMobsNearForRangedAoe >= 3)
                             {
-                                Log.ErrorFormat(" Blah Blah something about frenzy");
                                 
-                               
-                                LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, false,cachedPosition);
+                                
+                                //Cast poison arrow then wait 150 ms then cast frenzy combo'd with a curse implicitly 
+                                LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, true,cachedPosition);
 
                                 await Coroutine.Sleep(Utility.LatencySafeValue(150));
 
@@ -1586,6 +1587,20 @@ namespace OldRoutine
                         }
                     }
                 }
+
+
+                //Logic For Poison Arrow
+                if (_poisonArrowSlot != -1)
+                {
+                	var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_poisonArrowSlot);
+                	if (skill.CanUse() && (cachedMobsNearForRangedAoe > 0))
+                	{
+                			LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, true,cachedPosition);
+                			Log.ErrorFormat("[Logic] Used Poison Arrow");
+                	}
+                }
+
+                //SRS Logic
 				if (_summonRagingSpiritSlot != -1 &&
 					_summonRagingSpiritStopwatch.ElapsedMilliseconds >
 					OldRoutineSettings.Instance.SummonRagingSpiritDelayMs)

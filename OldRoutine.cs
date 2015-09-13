@@ -50,6 +50,7 @@ namespace OldRoutine
 		private int _summonRagingSpiritSlot = -1;
 		private int _coldSnapSlot = -1;
 		private int _frenzySlot = -1;
+		private int _poisonArrowSlot = -1;
 
 		private int _currentLeashRange = -1;
 
@@ -413,6 +414,7 @@ namespace OldRoutine
 
 			if (_needsUpdate)
 			{
+				_poisonArrowSlot = -1;
 				_frenzySlot = -1;
 				_raiseZombieSlot = -1;
 				_raiseSpectreSlot = -1;
@@ -475,6 +477,12 @@ namespace OldRoutine
 					}
 				}
 
+				//getter for skillbar slot for poisonarrow
+				var poison = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Poison Arrow");
+				if (IsCastableHelper(poison))
+				{
+					_poisonArrowSlot = poison.Slot;
+				}	
 				//addition of Frenzy code here.
 				var frenzy = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Frenzy");
 				if (IsCastableHelper(frenzy))
@@ -1566,18 +1574,14 @@ namespace OldRoutine
                                 Log.ErrorFormat(" Blah Blah something about frenzy");
                                 
                                
-                                var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_frenzySlot, false,targetPosition);
+                                LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, false,cachedPosition);
 
-                                if (err1 == LokiPoe.InGameState.UseError.None)
-                                {
-                                    await Coroutine.Sleep(Utility.LatencySafeValue(500));
+                                await Coroutine.Sleep(Utility.LatencySafeValue(150));
 
-                                    await Coroutines.FinishCurrentAction(false);
+                                LokiPoe.InGameState.SkillBarPanel.UseAt(_frenzySlot, false,cachedPosition);
 
-                                    return true;
-                                }
-
-                                Log.ErrorFormat("[Logic] Used Frenzy");
+                               
+                                Log.ErrorFormat("[Logic] Used Frenzy and Poison Arrow");
                             }
                         }
                     }

@@ -492,11 +492,7 @@ namespace OldRoutine
 					_frenzySlot = frenzy.Slot;
 				}
 
-				var cs = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Cold Snap");
-				if (IsCastableHelper(cs))
-				{
-					_coldSnapSlot = cs.Slot;
-				}
+			
 
 				var hoa = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Herald of Ash");
 				if (IsCastableHelper(hoa))
@@ -516,23 +512,7 @@ namespace OldRoutine
 					_heraldOfThunderSlot = hot.Slot;
 				}
 
-				var ss = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Summon Skeletons");
-				if (IsCastableHelper(ss))
-				{
-					_summonSkeletonsSlot = ss.Slot;
-				}
-
-				var srs = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Summon Raging Spirit");
-				if (IsCastableHelper(srs))
-				{
-					_summonRagingSpiritSlot = srs.Slot;
-				}
-
-				var rf = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Righteous Fire");
-				if (IsCastableHelper(rf))
-				{
-					_rfSlot = rf.Slot;
-				}
+			
 
 				var br = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Blood Rage");
 				if (IsCastableHelper(br))
@@ -564,35 +544,7 @@ namespace OldRoutine
 					_enduringCrySlot = ec.Slot;
 				}
 
-				var rz = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Raise Zombie");
-				if (IsCastableHelper(rz))
-				{
-					_raiseZombieSlot = rz.Slot;
-				}
-
-				var rs = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Raise Spectre");
-				if (IsCastableHelper(rs))
-				{
-					_raiseSpectreSlot = rs.Slot;
-				}
-
-				var fb = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Flameblast");
-				if (IsCastableHelper(fb))
-				{
-					_flameblastSlot = fb.Slot;
-				}
-
-				var ag = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Animate Guardian");
-				if (IsCastableHelper(ag))
-				{
-					_animateGuardianSlot = ag.Slot;
-				}
-
-				var aw = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Animate Weapon");
-				if (IsCastableHelper(aw))
-				{
-					_animateWeaponSlot = aw.Slot;
-				}
+			
 
 				_needsUpdate = false;
 			}
@@ -922,187 +874,9 @@ namespace OldRoutine
 
 				var myPos = LokiPoe.Me.Position;
 
-				// If we have flameblast, we need to use special logic for it.
-				if (_flameblastSlot != -1)
-				{
-					if (_castingFlameblast)
-					{
-						var c = LokiPoe.Me.FlameblastCharges;
-
-						// Handle being cast interrupted.
-						if (c < _lastFlameblastCharges)
-						{
-							_castingFlameblast = false;
-							return true;
-						}
-						_lastFlameblastCharges = c;
-
-						if (c >= OldRoutineSettings.Instance.MaxFlameBlastCharges)
-						{
-							// Stop using the skill, so it's cast.
-							await Coroutines.FinishCurrentAction();
-
-							_castingFlameblast = false;
-						}
-						else
-						{
-							await DisableAlwaysHiglight();
-
-							// Keep using the skill to build up charges.
-							var buaerr = LokiPoe.InGameState.SkillBarPanel.UseAt(_flameblastSlot, false,
-								myPos);
-							if (buaerr != LokiPoe.InGameState.UseError.None)
-							{
-								Log.ErrorFormat("[Logic] UseAt returned {0} for {1}.", buaerr, "Flameblast");
-							}
-						}
-
-						return true;
-					}
-				}
-
-				// Limit this logic once per second, because it can get expensive and slow things down if run too fast.
-				if (_animateGuardianSlot != -1 && _animateGuardianStopwatch.ElapsedMilliseconds > 1000)
-				{
-					// See if we can use the skill.
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_animateGuardianSlot);
-					if (skill.CanUse())
-					{
-						// Check for a target near us.
-						var target = BestAnimateGuardianTarget(skill.DeployedObjects.FirstOrDefault() as Monster,
-							skill.GetStat(StatTypeGGG.AnimateItemMaximumLevelRequirement));
-						if (target != null)
-						{
-							await DisableAlwaysHiglight();
-
-							Log.InfoFormat("[Logic] Using {0} on {1}.", skill.Name, target.Name);
-
-							var uaerr = LokiPoe.InGameState.SkillBarPanel.UseOn(_animateGuardianSlot, true, target);
-							if (uaerr == LokiPoe.InGameState.UseError.None)
-							{
-								await Coroutines.FinishCurrentAction(false);
-
-								await Coroutine.Sleep(Utility.LatencySafeValue(100));
-
-								// We need to remove the item highlighting.
-								LokiPoe.ProcessHookManager.ClearAllKeyStates();
-
-								return true;
-							}
-
-							Log.ErrorFormat("[Logic] UseOn returned {0} for {1}.", uaerr, skill.Name);
-						}
-
-						_animateGuardianStopwatch.Restart();
-					}
-				}
-
-				// Limit this logic once per second, because it can get expensive and slow things down if run too fast.
-				if (_animateWeaponSlot != -1 && _animateWeaponStopwatch.ElapsedMilliseconds > 1000)
-				{
-					// See if we can use the skill.
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_animateWeaponSlot);
-					if (skill.CanUse())
-					{
-						// Check for a target near us.
-						var target = BestAnimateWeaponTarget(skill.GetStat(StatTypeGGG.AnimateItemMaximumLevelRequirement));
-						if (target != null)
-						{
-							await DisableAlwaysHiglight();
-
-							Log.InfoFormat("[Logic] Using {0} on {1}.", skill.Name, target.Name);
-
-							var uaerr = LokiPoe.InGameState.SkillBarPanel.UseOn(_animateWeaponSlot, true, target);
-							if (uaerr == LokiPoe.InGameState.UseError.None)
-							{
-								await Coroutines.FinishCurrentAction(false);
-
-								await Coroutine.Sleep(Utility.LatencySafeValue(100));
-
-								// We need to remove the item highlighting.
-								LokiPoe.ProcessHookManager.ClearAllKeyStates();
-
-								_animateWeaponStopwatch.Restart();
-
-								return true;
-							}
-
-							Log.ErrorFormat("[Logic] UseOn returned {0} for {1}.", uaerr, skill.Name);
-						}
-
-						_animateWeaponStopwatch.Restart();
-					}
-				}
-
-				// If we have Raise Spectre, we can look for dead bodies to use for our army as we move around.
-				if (_raiseSpectreSlot != -1)
-				{
-					// See if we can use the skill.
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_raiseSpectreSlot);
-					if (skill.CanUse())
-					{
-						var max = skill.GetStat(StatTypeGGG.NumberOfSpectresAllowed);
-						if (skill.NumberDeployed < max)
-						{
-							// Check for a target near us.
-							var target = BestDeadTarget;
-							if (target != null)
-							{
-								await DisableAlwaysHiglight();
-
-								Log.InfoFormat("[Logic] Using {0} on {1}.", skill.Name, target.Name);
-
-								var uaerr = LokiPoe.InGameState.SkillBarPanel.UseAt(_raiseSpectreSlot, false,
-									target.Position);
-								if (uaerr == LokiPoe.InGameState.UseError.None)
-								{
-									await Coroutines.FinishCurrentAction(false);
-
-									await Coroutine.Sleep(Utility.LatencySafeValue(100));
-
-									return true;
-								}
-
-								Log.ErrorFormat("[Logic] UseAt returned {0} for {1}.", uaerr, skill.Name);
-							}
-						}
-					}
-				}
-
-				// If we have Raise Zombie, we can look for dead bodies to use for our army as we move around.
-				if (_raiseZombieSlot != -1)
-				{
-					// See if we can use the skill.
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_raiseZombieSlot);
-					if (skill.CanUse())
-					{
-						var max = skill.GetStat(StatTypeGGG.NumberOfZombiesAllowed);
-						if (skill.NumberDeployed < max)
-						{
-							// Check for a target near us.
-							var target = BestDeadTarget;
-							if (target != null)
-							{
-								await DisableAlwaysHiglight();
-
-								Log.InfoFormat("[Logic] Using {0} on {1}.", skill.Name, target.Name);
-
-								var uaerr = LokiPoe.InGameState.SkillBarPanel.UseAt(_raiseZombieSlot, false,
-									target.Position);
-								if (uaerr == LokiPoe.InGameState.UseError.None)
-								{
-									await Coroutines.FinishCurrentAction(false);
-
-									await Coroutine.Sleep(Utility.LatencySafeValue(100));
-
-									return true;
-								}
-
-								Log.ErrorFormat("[Logic] UseAt returned {0} for {1}.", uaerr, skill.Name);
-							}
-						}
-					}
-				}
+				
+			
+			
 
 				// Simply cast Tempest Shield if we have it.
 				if (_tempestShieldSlot != -1)
@@ -1355,16 +1129,7 @@ namespace OldRoutine
 					}
 				}
 
-				// Check for a surround to use flameblast, just example logic.
-				if (_flameblastSlot != -1)
-				{
-					if (Utility.NumberOfMobsNear(LokiPoe.Me, 15) >= 4)
-					{
-						_castingFlameblast = true;
-						_lastFlameblastCharges = 0;
-						return true;
-					}
-				}
+			
 
 				// TODO: _currentLeashRange of -1 means we need to use a cached location system to prevent back and forth issues of mobs despawning.
 
@@ -1540,28 +1305,7 @@ namespace OldRoutine
 				}
 				 
 
-				// Simply cast RF if we have it.
-				if (_rfSlot != -1)
-				{
-					// See if we can use the skill.
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_rfSlot);
-					if (skill.CanUse() && !LokiPoe.Me.HasRighteousFireBuff)
-					{
-						var err1 = LokiPoe.InGameState.SkillBarPanel.Use(_rfSlot, true);
-						if (err1 == LokiPoe.InGameState.UseError.None)
-						{
-							await Coroutine.Sleep(Utility.LatencySafeValue(500));
-
-							await Coroutines.FinishCurrentAction(false);
-
-							await Coroutine.Sleep(Utility.LatencySafeValue(100));
-
-							return true;
-						}
-
-						Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
-					}
-				}
+			
 
 				// Do we have frenzy and has it been used in the last second?
                 if (_frenzySlot != -1 && (_frenzyStopwatch.ElapsedMilliseconds > 500))
@@ -1591,83 +1335,19 @@ namespace OldRoutine
 
 
                 //Logic For Poison Arrow but make sure we havent used it in the last half second
-                if (_poisonArrowSlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 500))
+                if (_poisonArrowSlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 750))
                 {
                 	var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_poisonArrowSlot);
                 	if (skill.CanUse() && (
                 		Utility.NumberOfMobsNear(LokiPoe.Me,OldRoutineSettings.Instance.MaxRangeRange) >0))
                 	{
-                			LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, true,cachedPosition);
+                			LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, false,cachedPosition);
                 			Log.ErrorFormat("[Logic] Used Poison Arrow");
                 			_poisonArrowStopwatch.Restart();
                 	}
                 }
 
-                //SRS Logic
-				if (_summonRagingSpiritSlot != -1 &&
-					_summonRagingSpiritStopwatch.ElapsedMilliseconds >
-					OldRoutineSettings.Instance.SummonRagingSpiritDelayMs)
-				{
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_summonRagingSpiritSlot);
-					var max = skill.GetStat(StatTypeGGG.NumberOfRagingSpiritsAllowed);
-					if (skill.NumberDeployed < max && skill.CanUse())
-					{
-						++_summonRagingSpiritCount;
-
-						var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_summonRagingSpiritSlot, false, targetPosition);
-
-						if (_summonRagingSpiritCount >=
-							OldRoutineSettings.Instance.SummonRagingSpiritCountPerDelay)
-						{
-							_summonRagingSpiritCount = 0;
-							_summonRagingSpiritStopwatch.Restart();
-						}
-
-						if (err1 == LokiPoe.InGameState.UseError.None)
-						{
-							await Coroutine.Sleep(Utility.LatencySafeValue(500));
-
-							await Coroutines.FinishCurrentAction(false);
-
-							return true;
-						}
-
-						Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
-					}
-				}
-
-				if (_summonSkeletonsSlot != -1 &&
-					_summonSkeletonsStopwatch.ElapsedMilliseconds >
-					OldRoutineSettings.Instance.SummonSkeletonDelayMs)
-				{
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_summonSkeletonsSlot);
-					var max = skill.GetStat(StatTypeGGG.NumberOfSkeletonsAllowed);
-					if (skill.NumberDeployed < max && skill.CanUse())
-					{
-						++_summonSkeletonCount;
-
-						await DisableAlwaysHiglight();
-
-						var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_summonSkeletonsSlot, true,
-							myPos.GetPointAtDistanceAfterThis(cachedPosition,
-								cachedDistance/2));
-
-						if (_summonSkeletonCount >= OldRoutineSettings.Instance.SummonSkeletonCountPerDelay)
-						{
-							_summonSkeletonCount = 0;
-							_summonSkeletonsStopwatch.Restart();
-						}
-
-						if (err1 == LokiPoe.InGameState.UseError.None)
-						{
-							await Coroutines.FinishCurrentAction(false);
-
-							return true;
-						}
-
-						Log.ErrorFormat("[Logic] UseAt returned {0} for {1}.", err1, skill.Name);
-					}
-				}
+                
 
 				if (_mineSlot != -1 && _mineStopwatch.ElapsedMilliseconds >
 					OldRoutineSettings.Instance.MineDelayMs &&
@@ -1706,28 +1386,7 @@ namespace OldRoutine
 					}
 				}
 
-				// Handle cold snap logic. Only use when power charges won't be consumed.
-				if (_coldSnapSlot != -1)
-				{
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_coldSnapSlot);
-					if (skill.CanUse(false, false, false))
-					{
-						await DisableAlwaysHiglight();
-
-						var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_coldSnapSlot, true, cachedPosition);
-
-						if (err1 == LokiPoe.InGameState.UseError.None)
-						{
-							await Coroutine.Sleep(Utility.LatencySafeValue(250));
-
-							await Coroutines.FinishCurrentAction(false);
-
-							return true;
-						}
-
-						Log.ErrorFormat("[Logic] UseAt returned {0} for {1}.", err1, skill.Name);
-					}
-				}
+			
 
 				// Auto-cast any vaal skill at the best target as soon as it's usable.
 				if (OldRoutineSettings.Instance.AutoCastVaalSkills && _vaalStopwatch.ElapsedMilliseconds > 1000)

@@ -49,6 +49,7 @@ namespace OldRoutine
 		private int _summonSkeletonsSlot = -1;
 		private int _summonRagingSpiritSlot = -1;
 		private int _coldSnapSlot = -1;
+		private int _frenzySlot = -1;
 
 		private int _currentLeashRange = -1;
 
@@ -370,7 +371,18 @@ namespace OldRoutine
 				BotManager.Stop();
 			}
 		}
-
+		 private int FrenzyCharges
+        {
+            get
+            {
+                Aura aura = LokiPoe.ObjectManager.Me.Auras.FirstOrDefault(a => a.InternalName == "frenzy_charge");
+                if (aura != null)
+                {
+                    return aura.Charges;
+                }
+                return 0;
+            }
+        }
 		private bool IsCastableHelper(Skill skill)
 		{
 			return skill != null && skill.IsCastable && !skill.IsTotem && !skill.IsTrap && !skill.IsMine;
@@ -401,6 +413,7 @@ namespace OldRoutine
 
 			if (_needsUpdate)
 			{
+				_frenzySlot = -1;
 				_raiseZombieSlot = -1;
 				_raiseSpectreSlot = -1;
 				_animateWeaponSlot = -1;
@@ -460,6 +473,13 @@ namespace OldRoutine
 					{
 						_mineSlot = skill.Slot;
 					}
+				}
+
+				//addition of Frenzy code here.
+				var frenzy = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Frenzy");
+				if (IsCastableHelper(frenzy))
+				{
+					_frenzySlot = frenzy.Slot;
 				}
 
 				var cs = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Cold Snap");
@@ -1483,6 +1503,7 @@ namespace OldRoutine
 						}
 					}
 				}
+				
 
 				// Simply cast Blood Rage if we have it.
 				if (_bloodRageSlot != -1)
@@ -1506,6 +1527,7 @@ namespace OldRoutine
 						Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
 					}
 				}
+				 
 
 				// Simply cast RF if we have it.
 				if (_rfSlot != -1)
@@ -1530,6 +1552,36 @@ namespace OldRoutine
 					}
 				}
 
+				// Frenzy for charges and cursed
+                if (_frenzySlot != -1)
+                {
+                    // See if we can use the skill.
+                    var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_frenzySlot);
+                    if (skill.CanUse())
+                    {
+                        if (FrenzyCharges < (LokiPoe.ObjectManager.Me.GetStat(StatTypeGGG.MaxFrenzyCharges)-2) )
+                        {
+                            if (Utility.NumberOfMobsNear(LokiPoe.Me, 30) > 0)
+                            {
+                                Log.ErrorFormat(" Blah Blah something about frenzy");
+                                
+                               
+                                var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_frenzySlot, true,targetPosition);
+
+                                if (err1 == LokiPoe.InGameState.UseError.None)
+                                {
+                                    await Coroutine.Sleep(Utility.LatencySafeValue(500));
+
+                                    await Coroutines.FinishCurrentAction(false);
+
+                                    return true;
+                                }
+
+                                Log.ErrorFormat("[Logic] Used Frenzy");
+                            }
+                        }
+                    }
+                }
 				if (_summonRagingSpiritSlot != -1 &&
 					_summonRagingSpiritStopwatch.ElapsedMilliseconds >
 					OldRoutineSettings.Instance.SummonRagingSpiritDelayMs)

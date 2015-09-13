@@ -1561,12 +1561,12 @@ namespace OldRoutine
                     {
                         if (FrenzyCharges < (LokiPoe.ObjectManager.Me.GetStat(StatTypeGGG.MaxFrenzyCharges)-2) )
                         {
-                            if (Utility.NumberOfMobsNear(LokiPoe.Me, 30) > 0)
+                            if (Utility.NumberOfMobsNear(LokiPoe.Me, 60) > 0)
                             {
                                 Log.ErrorFormat(" Blah Blah something about frenzy");
                                 
                                
-                                var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_frenzySlot, true,targetPosition);
+                                var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_frenzySlot, false,targetPosition);
 
                                 if (err1 == LokiPoe.InGameState.UseError.None)
                                 {

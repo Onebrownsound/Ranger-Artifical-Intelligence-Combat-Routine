@@ -1395,7 +1395,7 @@ namespace OldRoutine
 				var cachedMobsNearForAoe = Utility.NumberOfMobsNear(LokiPoe.Me,
 					OldRoutineSettings.Instance.MaxMeleeRange);
 				var cachedMobsNearForCurse = Utility.NumberOfMobsNear(bestTarget, 20);
-				var cachedMobsNearForRangedAoe = Utility.NumberOfMobsNear(bestTarget,OldRoutineSettings.Instance.MaxRangeRange);
+				var cachedMobsNearForRangedAoe = Utility.NumberOfMobsNear(bestTarget,30);
 
 				foreach (var curseSlot in _curseSlots)
 				{
@@ -1593,7 +1593,8 @@ namespace OldRoutine
                 if (_poisonArrowSlot != -1)
                 {
                 	var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_poisonArrowSlot);
-                	if (skill.CanUse() && (cachedMobsNearForRangedAoe > 0))
+                	if (skill.CanUse() && (
+                		Utility.NumberOfMobsNear(LokiPoe.Me,OldRoutineSettings.Instance.MaxRangeRange) >0))
                 	{
                 			LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, true,cachedPosition);
                 			Log.ErrorFormat("[Logic] Used Poison Arrow");

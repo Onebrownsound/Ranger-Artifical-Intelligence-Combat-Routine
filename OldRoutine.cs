@@ -62,12 +62,14 @@ namespace OldRoutine
 		private readonly Stopwatch _moltenShellStopwatch = Stopwatch.StartNew();
 		private readonly List<int> _ignoreAnimatedItems = new List<int>();
 		private readonly Stopwatch _vaalStopwatch = Stopwatch.StartNew();
-
+		private readonly Stopwatch _frenzyStopwatch = Stopwatch.StartNew();
 		private int _summonSkeletonCount;
 		private readonly Stopwatch _summonSkeletonsStopwatch = Stopwatch.StartNew();
 
 		private int _summonRagingSpiritCount;
 		private readonly Stopwatch _summonRagingSpiritStopwatch = Stopwatch.StartNew();
+		private readonly Stopwatch _poisonArrowStopwatch = Stopwatch.StartNew();
+
 
 		private bool _castingFlameblast;
 		private int _lastFlameblastCharges;
@@ -1561,8 +1563,8 @@ namespace OldRoutine
 					}
 				}
 
-				// Frenzy for charges and cursed
-                if (_frenzySlot != -1)
+				// Do we have frenzy and has it been used in the last second?
+                if (_frenzySlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 1000))
                 {
                     // See if we can use the skill.
                     var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_frenzySlot);
@@ -1574,23 +1576,21 @@ namespace OldRoutine
                             {
                                 
                                 
-                                //Cast poison arrow then wait 150 ms then cast frenzy combo'd with a curse implicitly 
-                                LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, true,cachedPosition);
-
-                                await Coroutine.Sleep(Utility.LatencySafeValue(150));
+                               
+                                
 
                                 LokiPoe.InGameState.SkillBarPanel.UseAt(_frenzySlot, false,cachedPosition);
 
                                
-                                Log.ErrorFormat("[Logic] Used Frenzy and Poison Arrow");
+                                Log.ErrorFormat("[Logic] Used Frenzy for stacks.");
                             }
                         }
                     }
                 }
 
 
-                //Logic For Poison Arrow
-                if (_poisonArrowSlot != -1)
+                //Logic For Poison Arrow but make sure we havent used it in the last half second
+                if (_poisonArrowSlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 500))
                 {
                 	var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_poisonArrowSlot);
                 	if (skill.CanUse() && (
@@ -1598,6 +1598,7 @@ namespace OldRoutine
                 	{
                 			LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, true,cachedPosition);
                 			Log.ErrorFormat("[Logic] Used Poison Arrow");
+                			_poisonArrowStopwatch.Restart();
                 	}
                 }
 

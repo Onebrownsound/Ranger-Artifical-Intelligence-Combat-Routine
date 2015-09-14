@@ -27,11 +27,7 @@ namespace OldRoutine
 		private static readonly ILog Log = Logger.GetLoggerInstanceForType();
 
 		// Auto-set, you do not have to change these.
-		private int _raiseZombieSlot = -1;
-		private int _raiseSpectreSlot = -1;
-		private int _animateWeaponSlot = -1;
-		private int _animateGuardianSlot = -1;
-		private int _flameblastSlot = -1;
+		
 		private int _enduringCrySlot = -1;
 		private int _moltenShellSlot = -1;
 		private int _bloodRageSlot = -1;
@@ -46,33 +42,29 @@ namespace OldRoutine
 		private int _totemSlot = -1;
 		private int _trapSlot = -1;
 		private int _mineSlot = -1;
-		private int _summonSkeletonsSlot = -1;
-		private int _summonRagingSpiritSlot = -1;
+		
 		private int _coldSnapSlot = -1;
 		private int _frenzySlot = -1;
 		private int _poisonArrowSlot = -1;
+		private int _golemSlot = -1;
 
 		private int _currentLeashRange = -1;
 
 		private readonly Stopwatch _trapStopwatch = Stopwatch.StartNew();
 		private readonly Stopwatch _totemStopwatch = Stopwatch.StartNew();
 		private readonly Stopwatch _mineStopwatch = Stopwatch.StartNew();
-		private readonly Stopwatch _animateWeaponStopwatch = Stopwatch.StartNew();
-		private readonly Stopwatch _animateGuardianStopwatch = Stopwatch.StartNew();
+		
 		private readonly Stopwatch _moltenShellStopwatch = Stopwatch.StartNew();
 		private readonly List<int> _ignoreAnimatedItems = new List<int>();
 		private readonly Stopwatch _vaalStopwatch = Stopwatch.StartNew();
 		private readonly Stopwatch _frenzyStopwatch = Stopwatch.StartNew();
-		private int _summonSkeletonCount;
-		private readonly Stopwatch _summonSkeletonsStopwatch = Stopwatch.StartNew();
+	
+		private readonly Stopwatch _golemStopwatch = Stopwatch.StartNew();
 
-		private int _summonRagingSpiritCount;
-		private readonly Stopwatch _summonRagingSpiritStopwatch = Stopwatch.StartNew();
+		
 		private readonly Stopwatch _poisonArrowStopwatch = Stopwatch.StartNew();
 
 
-		private bool _castingFlameblast;
-		private int _lastFlameblastCharges;
 		private bool _needsUpdate;
 
 		private readonly Targeting _combatTargeting = new Targeting();
@@ -418,11 +410,8 @@ namespace OldRoutine
 			{
 				_poisonArrowSlot = -1;
 				_frenzySlot = -1;
-				_raiseZombieSlot = -1;
-				_raiseSpectreSlot = -1;
-				_animateWeaponSlot = -1;
-				_animateGuardianSlot = -1;
-				_flameblastSlot = -1;
+				
+				
 				_enduringCrySlot = -1;
 				_moltenShellSlot = -1;
 				_arcticArmourSlot = -1;
@@ -436,10 +425,8 @@ namespace OldRoutine
 				_coldSnapSlot = -1;
 				_bloodRageSlot = -1;
 				_rfSlot = -1;
-				_summonSkeletonsSlot = -1;
-				_summonRagingSpiritSlot = -1;
-				_summonSkeletonCount = 0;
-				_summonRagingSpiritCount = 0;
+				
+				
 				_mineSlot = -1;
 				_curseSlots.Clear();
 
@@ -491,7 +478,23 @@ namespace OldRoutine
 				{
 					_frenzySlot = frenzy.Slot;
 				}
+				  var golem = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Summon Flame Golem");
+                if (IsCastableHelper(golem))
+                {
+                    _golemSlot = golem.Slot;
+                }
 
+                golem = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Summon Ice Golem");
+                if (IsCastableHelper(golem))
+                {
+                    _golemSlot = golem.Slot;
+                }
+
+                golem = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Summon Chaos Golem");
+                if (IsCastableHelper(golem))
+                {
+                    _golemSlot = golem.Slot;
+                }
 			
 
 				var hoa = LokiPoe.InGameState.SkillBarPanel.Skills.FirstOrDefault(s => s.Name == "Herald of Ash");
@@ -900,6 +903,31 @@ namespace OldRoutine
 						Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
 					}
 				}
+
+				// Simply cast Summon Golem if we have it
+                if (_golemSlot != -1 && _golemStopwatch.ElapsedMilliseconds > 10000)
+                {
+                    // See if we can use the skill.
+                    var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_golemSlot);
+                    if (skill.CanUse() && skill.NumberDeployed < 1)
+                    {
+                        var err1 = LokiPoe.InGameState.SkillBarPanel.Use(_golemSlot, true);
+
+                        _golemStopwatch.Restart();
+                        if (err1 == LokiPoe.InGameState.UseError.None)
+                        {
+                            await Coroutine.Sleep(Utility.LatencySafeValue(500));
+
+                            await Coroutines.FinishCurrentAction(false);
+
+                            await Coroutine.Sleep(Utility.LatencySafeValue(100));
+
+                            return true;
+                        }
+
+                        Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
+                    }
+                }
 
 				// Simply cast Hearld of Ash if we have it.
 				if (_heraldOfAshSlot != -1)
@@ -1344,7 +1372,7 @@ namespace OldRoutine
 
 
                 //Logic For Poison Arrow but make sure we havent used it in the last half second
-                if (_poisonArrowSlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 300))
+                if (_poisonArrowSlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 100))
                 {
                 	var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_poisonArrowSlot);
                 	if (skill.CanUse() && (Utility.NumberOfMobsNear(LokiPoe.Me,OldRoutineSettings.Instance.MaxRangeRange) >0))
@@ -1414,30 +1442,30 @@ namespace OldRoutine
 				if (OldRoutineSettings.Instance.AutoCastVaalSkills && _vaalStopwatch.ElapsedMilliseconds > 1000)
 				{
 					foreach (var skill in LokiPoe.InGameState.SkillBarPanel.Skills)
-					{
-						if (skill.SkillTags.Contains("vaal"))
-						{
-							if (skill.CanUse())
-							{
-								await DisableAlwaysHiglight();
+                    {
+                        if (skill.SkillTags.Contains("vaal"))
+                        {
+                            if (skill.CanUse() && bestTarget.Rarity >= Rarity.Magic )
+                            {
+                                await DisableAlwaysHiglight();
 
-								var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(skill.Slot, false, cachedPosition);
-								if (err1 == LokiPoe.InGameState.UseError.None)
-								{
-									await Coroutine.Sleep(Utility.LatencySafeValue(250));
+                                var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(skill.Slot, false, cachedPosition);
+                                if (err1 == LokiPoe.InGameState.UseError.None)
+                                {
+                                    await Coroutine.Sleep(Utility.LatencySafeValue(250));
 
-									await Coroutines.FinishCurrentAction(false);
+                                    await Coroutines.FinishCurrentAction(false);
 
-									await Coroutine.Sleep(Utility.LatencySafeValue(1000));
+                                    await Coroutine.Sleep(Utility.LatencySafeValue(1000));
 
-									return true;
-								}
+                                    return true;
+                                }
 
-								Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
-							}
-						}
-					}
-					_vaalStopwatch.Restart();
+                                Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
+                            }
+                        }
+                    }
+                    _vaalStopwatch.Restart();
 				}
 
 				await DisableAlwaysHiglight();

@@ -1309,32 +1309,34 @@ namespace OldRoutine
 				}
 				
 
-				// Simply cast Blood Rage if we have it.
-				if (_bloodRageSlot != -1)
-				{
-					// See if we can use the skill.
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_bloodRageSlot);
-					if (skill.CanUse() && !LokiPoe.Me.HasBloodRageBuff && cachedDistance < OldRoutineSettings.Instance.CombatRange)
-					{
-						var err1 = LokiPoe.InGameState.SkillBarPanel.Use(_bloodRageSlot, true);
+				
+
+			
+				//Logic For Poison Arrow but make sure we havent used it in the last half second
+                if (_poisonArrowSlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 100))
+                {
+                	var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_poisonArrowSlot);
+                	if (skill.CanUse() && (Utility.NumberOfMobsNear(LokiPoe.Me,OldRoutineSettings.Instance.MaxRangeRange) >0))
+                	{		
+                		await DisableAlwaysHiglight();
+
+						var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, false,cachedPosition);
 						if (err1 == LokiPoe.InGameState.UseError.None)
 						{
-							await Coroutine.Sleep(Utility.LatencySafeValue(500));
+							await Coroutine.Sleep(Utility.LatencySafeValue(100));
 
 							await Coroutines.FinishCurrentAction(false);
 
 							await Coroutine.Sleep(Utility.LatencySafeValue(100));
-
+							_poisonArrowStopwatch.Restart();
+							Log.ErrorFormat("[Logic] Used Poison Arrow");	
 							return true;
 						}
-
-						Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
-					}
-				}
-				 
-
-			
-
+        			
+	        			Log.ErrorFormat("[Logic] There must have been an error with PA.");
+	        			_poisonArrowStopwatch.Restart();
+                	}
+                }
 				// Do we have frenzy and has it been used in the last second?
                 if (_frenzySlot != -1 && (_frenzyStopwatch.ElapsedMilliseconds > 300))
                 {
@@ -1371,31 +1373,29 @@ namespace OldRoutine
                 }
 
 
-                //Logic For Poison Arrow but make sure we havent used it in the last half second
-                if (_poisonArrowSlot != -1 && (_poisonArrowStopwatch.ElapsedMilliseconds > 100))
-                {
-                	var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_poisonArrowSlot);
-                	if (skill.CanUse() && (Utility.NumberOfMobsNear(LokiPoe.Me,OldRoutineSettings.Instance.MaxRangeRange) >0))
-                	{		
-                		await DisableAlwaysHiglight();
-
-						var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, false,cachedPosition);
+                // Simply cast Blood Rage if we have it.
+				if (_bloodRageSlot != -1)
+				{
+					// See if we can use the skill.
+					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_bloodRageSlot);
+					if (skill.CanUse() && !LokiPoe.Me.HasBloodRageBuff && cachedDistance < OldRoutineSettings.Instance.CombatRange)
+					{
+						var err1 = LokiPoe.InGameState.SkillBarPanel.Use(_bloodRageSlot, true);
 						if (err1 == LokiPoe.InGameState.UseError.None)
 						{
-							await Coroutine.Sleep(Utility.LatencySafeValue(100));
+							await Coroutine.Sleep(Utility.LatencySafeValue(500));
 
 							await Coroutines.FinishCurrentAction(false);
 
 							await Coroutine.Sleep(Utility.LatencySafeValue(100));
-							_poisonArrowStopwatch.Restart();
-							Log.ErrorFormat("[Logic] Used Poison Arrow");	
+
 							return true;
 						}
-        			
-	        			Log.ErrorFormat("[Logic] There must have been an error with PA.");
-	        			_poisonArrowStopwatch.Restart();
-                	}
-                }
+
+						Log.ErrorFormat("[Logic] Use returned {0} for {1}.", err1, skill.Name);
+					}
+				}
+				 
 
                 
 

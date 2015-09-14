@@ -1190,7 +1190,7 @@ namespace OldRoutine
 				var cachedMobsNearForAoe = Utility.NumberOfMobsNear(LokiPoe.Me,
 					OldRoutineSettings.Instance.MaxMeleeRange);
 				var cachedMobsNearForCurse = Utility.NumberOfMobsNear(bestTarget, 20);
-				var cachedMobsNearForRangedAoe = Utility.NumberOfMobsNear(bestTarget,50);
+				var cachedMobsNearForRangedAoe = Utility.NumberOfMobsNear(bestTarget,40);
 
 				foreach (var curseSlot in _curseSlots)
 				{
@@ -1320,7 +1320,7 @@ namespace OldRoutine
                 	{		
                 		await DisableAlwaysHiglight();
 
-						var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, false,cachedPosition);
+						var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_poisonArrowSlot, true,cachedPosition);
 						if (err1 == LokiPoe.InGameState.UseError.None)
 						{
 							await Coroutine.Sleep(Utility.LatencySafeValue(100));
@@ -1350,7 +1350,7 @@ namespace OldRoutine
                             {
                                 await DisableAlwaysHiglight();
 
-								var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_frenzySlot, false,cachedPosition);
+								var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_frenzySlot, true,cachedPosition);
 								if (err1 == LokiPoe.InGameState.UseError.None)
 								{
 									await Coroutine.Sleep(Utility.LatencySafeValue(100));

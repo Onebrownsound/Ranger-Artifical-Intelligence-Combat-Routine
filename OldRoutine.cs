@@ -40,7 +40,7 @@ namespace OldRoutine
 		private readonly List<int> _curseSlots = new List<int>();
 		private int _auraSlot = -1;
 		private int _totemSlot = -1;
-		private int _trapSlot = -1;
+	
 		private int _mineSlot = -1;
 		
 		private int _coldSnapSlot = -1;
@@ -50,7 +50,7 @@ namespace OldRoutine
 
 		private int _currentLeashRange = -1;
 
-		private readonly Stopwatch _trapStopwatch = Stopwatch.StartNew();
+		
 		private readonly Stopwatch _totemStopwatch = Stopwatch.StartNew();
 		private readonly Stopwatch _mineStopwatch = Stopwatch.StartNew();
 		
@@ -421,7 +421,7 @@ namespace OldRoutine
 				_heraldOfThunderSlot = -1;
 				_auraSlot = -1;
 				_totemSlot = -1;
-				_trapSlot = -1;
+			
 				_coldSnapSlot = -1;
 				_bloodRageSlot = -1;
 				_rfSlot = -1;
@@ -455,10 +455,7 @@ namespace OldRoutine
 						_totemSlot = skill.Slot;
 					}
 
-					if (skill.IsTrap && _trapSlot == -1)
-					{
-						_trapSlot = skill.Slot;
-					}
+				
 
 					if (skill.IsMine && _mineSlot == -1)
 					{
@@ -1262,27 +1259,7 @@ namespace OldRoutine
 					}
 				}
 
-				// Handle trap logic.
-				if (_trapSlot != -1 &&
-					_trapStopwatch.ElapsedMilliseconds > OldRoutineSettings.Instance.TrapDelayMs)
-				{
-					var skill = LokiPoe.InGameState.SkillBarPanel.Slot(_trapSlot);
-					if (skill.CanUse())
-					{
-						await DisableAlwaysHiglight();
-
-						var err1 = LokiPoe.InGameState.SkillBarPanel.UseAt(_trapSlot, true,
-							myPos.GetPointAtDistanceAfterThis(cachedPosition,
-								cachedDistance/2));
-
-						_trapStopwatch.Restart();
-
-						if (err1 == LokiPoe.InGameState.UseError.None)
-							return true;
-
-						Log.ErrorFormat("[Logic] UseAt returned {0} for {1}.", err1, skill.Name);
-					}
-				}
+			
 
 				// Handle curse logic - curse magic+ and packs of 4+, but only cast within MaxRangeRange.
 				var checkCurses = myPos.Distance(cachedPosition) < OldRoutineSettings.Instance.MaxRangeRange &&
